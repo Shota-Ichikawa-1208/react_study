@@ -6,14 +6,63 @@ export default function App(){
   console.log('App component rendered');
   return(
     <div>
-      <Board />
+      <Game />
     </div>
   );
 }
 
-function Board(){
+function Game(){
   const [xIsNext, setXIsNext] = useState(true);
-  const [squares, setSquares] = useState(Array(9).fill(null));
+  //盤面（要素数9の配列）の履歴を保存する2次元配列
+  const [history, setHistory] = useState([Array(9).fill(null)]);
+  //現在の表示盤面が何番手のものかを表す変数
+  const [currentMove, setCurrentMone] = useState(0);
+  //現在の盤面を表す配列
+  const currentSquares = history[currentMove];
+
+  function handlePlay(nextSquares){
+    //playerの変更
+    setXIsNext(!xIsNext);
+    const nextHistory =[...history.slice(0,currentMove+1),nextSquares];
+    setHistory(nextHistory);
+    setCurrentMone(nextHistory.length - 1);
+  }
+
+  //過去の盤面に戻る
+  function jumpTo(nextMove){
+    setCurrentMone(nextMove);
+    setXIsNext(nextMove % 2 === 0);
+  }
+
+  //<li>を格納した配列(moves)
+  const moves = history.map((squares,move) => {
+    let description;
+    if(move > 0){
+      description = 'Go to move #' + move;
+    }else{
+      description = 'Go to start';
+    }
+
+    return (
+      <li key={move}>
+        <button onClick={() => jumpTo(move)}>{description}</button>
+      </li>
+    )
+  })
+
+  return (
+    <div className='game'>
+      <div className='game-board'>
+        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay}/>
+      </div>
+      <div className='game-info'>
+        <ol>{moves}</ol>
+      </div>
+    </div>
+  )
+}
+
+function Board({xIsNext,squares,onPlay}){
   const [winner, setWinner] = useState(null);
   const [isDraw, setIsDarw] = useState(false);
 
@@ -33,11 +82,9 @@ function Board(){
       nextSquares[index] = "○";
     }
     //フィールドの値を変更
-    setSquares(nextSquares);
+    onPlay(nextSquares);
     //勝者をセット
     setWinner(calculateWinner(nextSquares));
-    //playerを変更
-    setXIsNext(!xIsNext);
   }
 
   let status;
